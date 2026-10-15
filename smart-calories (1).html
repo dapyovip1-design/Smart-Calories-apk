@@ -1,0 +1,1486 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" id="html-root" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">حاسبة السعرات الذكية | Smart Calories</title>
+    <!-- استيراد Tailwind CSS للتصميم -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- استيراد خطوط Google (Cairo) -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <!-- استيراد أيقونات FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Cairo', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#10B981', // Emerald green
+                        secondary: '#34D399',
+                        darkBg: '#111827',
+                        cardBg: '#1F2937',
+                        cardBgLight: '#374151'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-950 text-gray-800 dark:text-gray-100 min-h-screen flex flex-col transition-colors duration-200">
+
+    <div id="onboarding-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div id="onboarding-card" class="relative bg-white dark:bg-[#1E293B] rounded-3xl max-w-md w-full p-6 shadow-2xl border border-gray-200 dark:border-gray-700 text-start">
+            <button onclick="cycleLanguage()" id="btn-onboarding-lang" title="Language / اللغة / भाषा" class="absolute top-4 rtl:left-4 ltr:right-4 flex items-center gap-1.5 bg-gray-100 dark:bg-[#111827] text-gray-700 dark:text-gray-300 text-[11px] font-bold px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 hover:bg-emerald-50 dark:hover:bg-emerald-500/15 transition">
+                <i class="fa-solid fa-globe text-emerald-600 dark:text-emerald-400"></i>
+                <span id="txt-onboarding-lang">العربية</span>
+            </button>
+            <div class="w-12 h-12 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-2xl flex items-center justify-center text-xl mb-4">
+                <i class="fa-solid fa-user-gear"></i>
+            </div>
+            <h2 id="welcome-title" class="text-lg font-bold text-gray-900 dark:text-white mb-1">مرحباً بك! 👋</h2>
+            <p id="welcome-desc" class="text-xs text-gray-600 dark:text-gray-400 mb-5">أدخل بياناتك الشخصية وهدفك لنقوم بتهيئة برنامجك الغذائي بدقة.</p>
+            
+            <div class="space-y-3.5 mb-6">
+                <div>
+                    <label id="label-name-input" class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">الاسم الكريم</label>
+                    <input type="text" id="user-name" placeholder="اكتب اسمك هنا..." class="w-full bg-gray-100 dark:bg-[#111827] text-gray-900 dark:text-white text-xs rounded-2xl p-3 border border-gray-200 dark:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                    <label id="label-weight-input" class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">الوزن الحالي (كجم)</label>
+                    <input type="number" id="user-weight" placeholder="مثال: 75" class="w-full bg-gray-100 dark:bg-[#111827] text-gray-900 dark:text-white text-xs rounded-2xl p-3 border border-gray-200 dark:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                    <label id="label-height-input" class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">الطول (سم)</label>
+                    <input type="number" id="user-height" placeholder="مثال: 175" class="w-full bg-gray-100 dark:bg-[#111827] text-gray-900 dark:text-white text-xs rounded-2xl p-3 border border-gray-200 dark:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                    <label id="label-goal-select" class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">هدف النظام الغذائي</label>
+                    <select id="user-goal" class="w-full bg-gray-100 dark:bg-[#111827] text-gray-900 dark:text-white text-xs rounded-2xl p-3 border border-gray-200 dark:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <option value="cut" id="opt-goal-cut">نقص الوزن (تنشيط / خسارة دهون)</option>
+                        <option value="bulk" id="opt-goal-bulk">تضخيم (زيادة عضلية)</option>
+                        <option value="maintain" id="opt-goal-maintain" selected>ثبات الوزن (محافظة)</option>
+                    </select>
+                </div>
+            </div>
+
+            <button onclick="saveUserProfile()" id="btn-save-profile" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition text-xs shadow-lg flex items-center justify-center gap-2">
+                <i class="fa-solid fa-check"></i> <span id="txt-save-btn">حفظ البدء والحساب</span>
+            </button>
+        </div>
+    </div>
+
+    <div id="edit-profile-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div id="edit-profile-card" class="bg-white dark:bg-[#1E293B] rounded-3xl max-w-md w-full p-6 shadow-2xl border border-gray-200 dark:border-gray-700 text-start relative">
+            <button onclick="closeEditProfileModal()" class="absolute top-4 rtl:left-4 ltr:right-4 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <div class="w-12 h-12 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-2xl flex items-center justify-center text-xl mb-4">
+                <i class="fa-solid fa-user-pen"></i>
+            </div>
+            <h2 id="label-edit-profile-title" class="text-lg font-bold text-gray-900 dark:text-white mb-1">تعديل البيانات الشخصية</h2>
+            <p id="label-edit-profile-desc" class="text-xs text-gray-600 dark:text-gray-400 mb-5">قم بتحديث بياناتك وسعراتك المستهدفة فوراً.</p>
+            
+            <div class="space-y-3.5 mb-6">
+                <div>
+                    <label id="label-edit-name" class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">الاسم الكريم</label>
+                    <input type="text" id="edit-user-name" class="w-full bg-gray-100 dark:bg-[#111827] text-gray-900 dark:text-white text-xs rounded-2xl p-3 border border-gray-200 dark:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                    <label id="label-edit-weight" class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">الوزن الحالي (كجم)</label>
+                    <input type="number" id="edit-user-weight" class="w-full bg-gray-100 dark:bg-[#111827] text-gray-900 dark:text-white text-xs rounded-2xl p-3 border border-gray-200 dark:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                    <label id="label-edit-height" class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">الطول (سم)</label>
+                    <input type="number" id="edit-user-height" class="w-full bg-gray-100 dark:bg-[#111827] text-gray-900 dark:text-white text-xs rounded-2xl p-3 border border-gray-200 dark:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                    <label id="label-edit-goal" class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">هدف النظام الغذائي</label>
+                    <select id="edit-user-goal" class="w-full bg-gray-100 dark:bg-[#111827] text-gray-900 dark:text-white text-xs rounded-2xl p-3 border border-gray-200 dark:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <option value="cut" id="opt-edit-cut">نقص الوزن (تنشيط / خسارة دهون)</option>
+                        <option value="bulk" id="opt-edit-bulk">تضخيم (زيادة عضلية)</option>
+                        <option value="maintain" id="opt-edit-maintain">ثبات الوزن (محافظة)</option>
+                    </select>
+                </div>
+            </div>
+
+            <button onclick="updateUserProfile()" id="label-edit-btn-update" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition text-xs shadow-lg flex items-center justify-center gap-2">
+                <i class="fa-solid fa-check"></i> <span id="txt-update-btn">تحديث الحساب والسعرات</span>
+            </button>
+        </div>
+    </div>
+
+    <div id="result-summary-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div id="result-summary-card" class="bg-white dark:bg-[#1E293B] rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-gray-200 dark:border-gray-700 text-center">
+            <div class="w-12 h-12 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-2xl flex items-center justify-center text-xl mx-auto mb-3">
+                <i class="fa-solid fa-fire-flame-curved"></i>
+            </div>
+            <h3 class="text-base font-bold text-gray-900 dark:text-white mb-1" id="result-modal-title">برنامجك الغذائي المخصص</h3>
+            <p class="text-[11px] text-gray-600 dark:text-gray-400 mb-5" id="result-modal-desc">تم حساب السعرات والمغذيات الكبرى بناءً على بياناتك وهدفك بنجاح.</p>
+            
+            <div class="flex flex-col items-center justify-center mb-5">
+                <div class="relative w-36 h-36 rounded-full flex flex-col items-center justify-center border-[6px] border-emerald-500/30 shadow-inner bg-emerald-500/5">
+                    <div class="text-2xl font-extrabold text-gray-900 dark:text-white" id="modal-target-calories">2338</div>
+                    <div class="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5" id="modal-kcal-label">كيلو كالوري</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2.5 mb-5">
+                <div class="bg-gray-100 dark:bg-[#2A374A]/60 p-2.5 rounded-2xl text-center border border-gray-200 dark:border-gray-700/50">
+                    <div class="text-[10px] text-gray-500 dark:text-gray-400 mb-0.5" id="modal-prot-label">بروتين</div>
+                    <div class="text-sm font-bold text-blue-600 dark:text-blue-400"><span id="modal-target-protein">175</span>g</div>
+                </div>
+                <div class="bg-gray-100 dark:bg-[#2A374A]/60 p-2.5 rounded-2xl text-center border border-gray-200 dark:border-gray-700/50">
+                    <div class="text-[10px] text-gray-500 dark:text-gray-400 mb-0.5" id="modal-carb-label">كارب</div>
+                    <div class="text-sm font-bold text-emerald-600 dark:text-emerald-400"><span id="modal-target-carbs">263</span>g</div>
+                </div>
+                <div class="bg-gray-100 dark:bg-[#2A374A]/60 p-2.5 rounded-2xl text-center border border-gray-200 dark:border-gray-700/50">
+                    <div class="text-[10px] text-gray-500 dark:text-gray-400 mb-0.5" id="modal-fat-label">دهون</div>
+                    <div class="text-sm font-bold text-amber-600 dark:text-amber-500"><span id="modal-target-fat">65</span>g</div>
+                </div>
+            </div>
+
+            <button onclick="closeResultModal()" id="result-modal-btn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition text-xs shadow-lg">
+                بدء استخدام التطبيق
+            </button>
+        </div>
+    </div>
+
+    <div id="meal-detail-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div id="meal-detail-card" class="bg-white dark:bg-[#1E293B] rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-gray-200 dark:border-gray-700 text-center relative">
+            <button onclick="closeMealDetailModal()" class="absolute top-4 rtl:left-4 ltr:right-4 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <div class="w-12 h-12 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-2xl flex items-center justify-center text-xl mx-auto mb-3">
+                <i class="fa-solid fa-utensils"></i>
+            </div>
+            <h3 class="text-base font-bold text-gray-900 dark:text-white mb-1" id="detail-meal-name">اسم الوجبة</h3>
+            <p class="text-[11px] text-gray-600 dark:text-gray-400 mb-5" id="detail-meal-subtitle">تفاصيل السعرات والمغذيات الكبرى لهذه الوجبة</p>
+            
+            <div class="flex flex-col items-center justify-center mb-5">
+                <div class="relative w-36 h-36 rounded-full flex flex-col items-center justify-center border-[6px] border-emerald-500/30 shadow-inner bg-emerald-500/5">
+                    <div class="text-2xl font-extrabold text-gray-900 dark:text-white" id="detail-meal-calories">0</div>
+                    <div class="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5" id="detail-kcal-label">كيلو كالوري</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2.5 mb-5">
+                <div class="bg-gray-100 dark:bg-[#2A374A]/60 p-2.5 rounded-2xl text-center border border-gray-200 dark:border-gray-700/50">
+                    <div class="text-[10px] text-gray-500 dark:text-gray-400 mb-0.5" id="detail-prot-label">بروتين</div>
+                    <div class="text-sm font-bold text-blue-600 dark:text-blue-400"><span id="detail-meal-protein">0</span>g</div>
+                </div>
+                <div class="bg-gray-100 dark:bg-[#2A374A]/60 p-2.5 rounded-2xl text-center border border-gray-200 dark:border-gray-700/50">
+                    <div class="text-[10px] text-gray-500 dark:text-gray-400 mb-0.5" id="detail-carb-label">كارب</div>
+                    <div class="text-sm font-bold text-emerald-600 dark:text-emerald-400"><span id="detail-meal-carbs">0</span>g</div>
+                </div>
+                <div class="bg-gray-100 dark:bg-[#2A374A]/60 p-2.5 rounded-2xl text-center border border-gray-200 dark:border-gray-700/50">
+                    <div class="text-[10px] text-gray-500 dark:text-gray-400 mb-0.5" id="detail-fat-label">دهون</div>
+                    <div class="text-sm font-bold text-amber-600 dark:text-amber-500"><span id="detail-meal-fat">0</span>g</div>
+                </div>
+            </div>
+
+            <button onclick="closeMealDetailModal()" id="detail-close-btn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition text-xs shadow-lg">
+                إغلاق
+            </button>
+        </div>
+    </div>
+
+    <!-- AI Chat Window Floating -->
+    <div id="chat-window" class="fixed inset-x-0 bottom-16 md:inset-auto md:bottom-24 md:end-6 md:w-[400px] md:h-[550px] bg-white dark:bg-[#1E293B] border border-gray-200 dark:border-gray-700 rounded-t-3xl md:rounded-3xl shadow-2xl z-50 hidden flex-col overflow-hidden transition-all">
+        <div class="bg-gradient-to-r from-violet-600 to-purple-600 text-white p-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3 rtl:space-x-reverse">
+                <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                    <i class="fa-solid fa-robot text-sm"></i>
+                </div>
+                <div>
+                    <h4 class="font-bold text-sm" id="chat-title">مدرب التغذية الذكي</h4>
+                    <p class="text-[10px] text-purple-100" id="chat-subtitle">اسأل عن أي نظام أو سعرات</p>
+                </div>
+            </div>
+            <button onclick="toggleChat()" class="text-white/80 hover:text-white p-2"><i class="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 text-sm">
+            <div class="bg-gray-100 dark:bg-[#2A374A] text-gray-800 dark:text-gray-200 rounded-2xl p-3 shadow-xs max-w-[85%]">
+                أهلاً بك! أنا مدربك الذكي للتغذية. اسألني عن السعرات، أو اطلب مني اقتراح وجبة خفيفة ومناسبة لهدفك.
+            </div>
+        </div>
+
+        <div class="p-3 bg-white dark:bg-[#1E293B] border-t border-gray-200 dark:border-gray-700 flex items-center gap-2">
+            <button onclick="askMealSuggestion()" id="btn-chat-suggest" class="text-xs bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 px-3 py-2 rounded-xl font-bold hover:bg-purple-100 transition whitespace-nowrap">
+                <i class="fa-solid fa-lightbulb"></i> <span id="txt-suggest-btn">اقترح وجبة</span>
+            </button>
+            <input type="text" id="chat-input" placeholder="اكتب سؤالك..." class="flex-1 bg-gray-100 dark:bg-[#111827] border-0 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-purple-500 text-gray-800 dark:text-gray-100 focus:outline-none" onkeypress="if(event.key==='Enter') sendChatMessage()">
+            <button onclick="sendChatMessage()" class="w-9 h-9 rounded-xl bg-purple-600 text-white flex items-center justify-center hover:bg-purple-500 transition"><i class="fa-solid fa-paper-plane text-xs"></i></button>
+        </div>
+    </div>
+
+    <!-- Fridge Chef Modal -->
+    <div id="fridge-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-[#1E293B] rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-gray-200 dark:border-gray-700">
+            <div class="flex items-center justify-between">
+                <h3 class="font-black text-base text-gray-900 dark:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-bowl-food text-indigo-500"></i> <span id="fridge-modal-title">شيف الثلاجة الذكي</span>
+                </h3>
+                <button onclick="closeFridgeModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <p class="text-xs text-gray-500 dark:text-gray-400" id="fridge-modal-desc">اكتب المكونات المتوفرة لديك في الثلاجة، وسيقوم الذكاء الاصطناعي بابتكار وصفة صحية ومناسبة لسعراتك!</p>
+            
+            <textarea id="fridge-ingredients" placeholder="مثال: بيض، طماطم، جبن قريش، شوفان..." class="w-full h-24 bg-gray-100 dark:bg-[#111827] border border-gray-200 dark:border-gray-700 rounded-2xl p-3 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none text-gray-800 dark:text-gray-100 resize-none"></textarea>
+            
+            <button onclick="generateRecipeFromFridge()" id="fridge-submit-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-2xl transition text-xs shadow-md">
+                ابتكر الوصفة الصحية
+            </button>
+
+            <div id="fridge-result" class="hidden max-h-48 overflow-y-auto bg-gray-50 dark:bg-[#111827] p-4 rounded-2xl text-xs text-gray-700 dark:text-gray-300 leading-relaxed border border-gray-200 dark:border-gray-700"></div>
+        </div>
+    </div>
+
+    <!-- Weekly Plan Modal -->
+    <div id="weekly-plan-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-[#1E293B] rounded-3xl max-w-2xl w-full p-6 space-y-4 shadow-2xl border border-gray-200 dark:border-gray-700 max-h-[85vh] flex flex-col">
+            <div class="flex items-center justify-between">
+                <h3 class="font-black text-base text-gray-900 dark:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-calendar-days text-emerald-600"></i> <span id="weekly-modal-title">خطة النظام الغذائي الأسبوعي</span>
+                </h3>
+                <button onclick="closeWeeklyPlanModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <div id="weekly-plan-result" class="flex-1 overflow-y-auto bg-gray-50 dark:bg-[#111827] p-4 rounded-2xl text-xs text-gray-700 dark:text-gray-300 leading-relaxed border border-gray-200 dark:border-gray-700 whitespace-pre-line">
+                اضغط على الزر أدناه لتوليد جدول النظام الغذائي الأسبوعي الكامل المخصص خصيصاً لهدفك وسعراتك الحالية!
+            </div>
+
+            <button onclick="generateWeeklyDietPlan()" id="weekly-submit-btn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-2xl transition text-xs shadow-md">
+                توليد جدول الأسبوع بالذكاء الاصطناعي
+            </button>
+        </div>
+    </div>
+
+    <!-- Streak History Modal -->
+    <div id="streak-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-[#1E293B] rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-gray-200 dark:border-gray-700 max-h-[90vh] flex flex-col">
+            <div class="flex items-center justify-between">
+                <h3 class="font-black text-base text-gray-900 dark:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-fire text-amber-500"></i> <span id="streak-modal-title">سجل الاستمرارية والأيام</span>
+                </h3>
+                <button onclick="closeStreakHistoryModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <p class="text-xs text-gray-500 dark:text-gray-400" id="streak-modal-desc">اختر أي يوم من الأيام التالية لعرض ملخص السعرات والوجبات المسجلة فيه:</p>
+
+            <div id="weekly-days-list" class="grid grid-cols-7 gap-1.5 py-2"></div>
+
+            <div id="selected-day-details" class="flex-1 overflow-y-auto bg-gray-50 dark:bg-[#111827] p-4 rounded-2xl space-y-3 text-xs border border-gray-200 dark:border-gray-700">
+                <div class="text-center text-gray-500 dark:text-gray-400 py-4">انقر على أي يوم بالأعلى لعرض التفاصيل</div>
+            </div>
+
+            <button onclick="closeStreakHistoryModal()" class="w-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-bold py-3 rounded-2xl transition text-xs">
+                إغلاق
+            </button>
+        </div>
+    </div>
+
+    <header class="bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <div class="bg-gradient-to-tr from-emerald-500 to-teal-400 text-white p-2 rounded-xl shadow-md font-bold text-base">
+                    <i class="fa-solid fa-leaf"></i>
+                </div>
+                <div>
+                    <h1 id="app-title-header" class="font-extrabold text-base sm:text-lg leading-tight tracking-tight text-gray-900 dark:text-white">السعرات الذكية</h1>
+                    <div id="user-greeting-badge" class="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold cursor-pointer hover:underline" onclick="openEditProfileModal()" title="انقر لتعديل الاسم والبيانات">أهلاً عمرو</div>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2 relative">
+                <div class="relative">
+                    <button onclick="toggleSettingsDropdown()" id="btn-settings-gear" title="الإعدادات" class="w-9 h-9 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+                        <i class="fa-solid fa-gear text-sm"></i>
+                    </button>
+                    <div id="settings-dropdown" class="hidden absolute rtl:left-0 ltr:right-0 mt-2 w-56 bg-white dark:bg-[#1E293B] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 py-2 z-50 text-xs">
+                        <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-700/60 font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                            <i class="fa-solid fa-sliders text-emerald-500"></i> <span id="settings-menu-title">إعدادات التطبيق</span>
+                        </div>
+                        <button onclick="openEditProfileModal(); toggleSettingsDropdown();" class="w-full text-start px-4 py-2.5 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2.5 text-gray-700 dark:text-gray-200">
+                            <i class="fa-solid fa-user-pen text-emerald-500"></i> <span id="menu-edit-profile">تعديل البيانات الشخصية</span>
+                        </button>
+                        <button onclick="cycleLanguage(); toggleSettingsDropdown();" class="w-full text-start px-4 py-2.5 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2.5 text-gray-700 dark:text-gray-200">
+                            <i class="fa-solid fa-language text-purple-500"></i> <span id="menu-lang-switch">تغيير اللغة (AR / EN / HI)</span>
+                        </button>
+                        <button onclick="toggleDarkMode(); toggleSettingsDropdown();" class="w-full text-start px-4 py-2.5 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2.5 text-gray-700 dark:text-gray-200">
+                            <i class="fa-solid fa-moon dark:fa-sun text-amber-500"></i> <span id="menu-dark-mode">تبديل الوضع الداكن</span>
+                        </button>
+                        <button onclick="clearAllMeals(); toggleSettingsDropdown();" class="w-full text-start px-4 py-2.5 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2.5 text-red-500 dark:text-red-400 border-t border-gray-100 dark:border-gray-700/60 mt-1">
+                            <i class="fa-solid fa-trash-can"></i> <span id="menu-clear-meals">إعادة ضبط وجبات اليوم</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-xl w-full mx-auto p-4 sm:p-5 pb-36 space-y-4">
+        
+        <div onclick="openStreakHistoryModal()" class="bg-gradient-to-r from-emerald-600/10 to-teal-600/10 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-3xl p-4 shadow-md border border-emerald-500/30 flex items-center justify-between cursor-pointer hover:border-emerald-500/60 transition transform hover:scale-[1.01]">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-emerald-500 text-white rounded-2xl flex items-center justify-center text-lg shadow-md flex-shrink-0 animate-pulse">
+                    <i class="fa-solid fa-fire-flame-curved"></i>
+                </div>
+                <div>
+                    <div id="label-streak-title" class="text-xs font-bold text-gray-700 dark:text-gray-300">أيام الاستمرارية والنشاط (اضغط للتفاصيل)</div>
+                    <div class="text-base font-extrabold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 mt-0.5">
+                        <span id="streak-days-count">1</span> <span id="label-streak-days" class="text-xs text-gray-600 dark:text-gray-300">أيام متتالية من تسجيل الدخول</span>
+                    </div>
+                </div>
+            </div>
+            <div class="text-start bg-white/90 dark:bg-[#1E293B]/80 px-3.5 py-2 rounded-2xl border border-gray-200 dark:border-gray-700 flex items-center gap-2 shadow-sm">
+                <div>
+                    <div class="text-[10px] text-gray-500 dark:text-gray-400" id="label-results-status">نتائج الحفظ</div>
+                    <div class="text-xs font-bold text-gray-900 dark:text-white"><span id="results-total-meals-count">0</span> <span id="label-results-meals">وجبة مسجلة</span></div>
+                </div>
+                <i class="fa-solid fa-chevron-left rtl:rotate-0 ltr:rotate-180 text-emerald-600 dark:text-emerald-400 text-xs"></i>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-[#1E293B] rounded-3xl p-5 shadow-lg border border-gray-200 dark:border-gray-800 flex flex-col items-center">
+            <div class="w-full flex justify-between items-center mb-4">
+                <span id="label-daily-summary" class="text-xs font-bold text-gray-500 dark:text-gray-400">ملخص اليوم</span>
+                <span id="goal-type-badge" class="text-[10px] bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 px-2.5 py-1 rounded-full font-bold"><span id="label-goal-text">الهدف:</span> <span id="label-goal-type">ثبات الوزن</span></span>
+            </div>
+
+            <div class="relative w-40 h-40 rounded-full flex flex-col items-center justify-center border-[6px] border-emerald-500/30 shadow-inner bg-emerald-500/5 mb-5">
+                <div class="text-3xl font-extrabold text-gray-900 dark:text-white" id="total-calories">0</div>
+                <div class="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5"><span id="label-from-text">من</span> <span id="display-target-kcal">2000</span> <span id="label-kcal-text">كيلو كالوري</span></div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-3 w-full">
+                <div class="bg-gray-100 dark:bg-[#2A374A]/60 p-3 rounded-2xl text-center border border-gray-200 dark:border-gray-700/50">
+                    <div class="text-[10px] text-gray-500 dark:text-gray-400 mb-1" id="label-protein">بروتين</div>
+                    <div class="text-sm font-bold text-blue-600 dark:text-blue-400"><span id="total-protein">0</span>g</div>
+                    <div class="text-[9px] text-gray-500 dark:text-gray-400 mt-0.5" id="label-protein-target">هدف: 150g</div>
+                </div>
+                <div class="bg-gray-100 dark:bg-[#2A374A]/60 p-3 rounded-2xl text-center border border-gray-200 dark:border-gray-700/50">
+                    <div class="text-[10px] text-gray-500 dark:text-gray-400 mb-1" id="label-carbs">كارب</div>
+                    <div class="text-sm font-bold text-emerald-600 dark:text-emerald-400"><span id="total-carbs">0</span>g</div>
+                    <div class="text-[9px] text-gray-500 dark:text-gray-400 mt-0.5" id="label-carbs-target">هدف: 220g</div>
+                </div>
+                <div class="bg-gray-100 dark:bg-[#2A374A]/60 p-3 rounded-2xl text-center border border-gray-200 dark:border-gray-700/50">
+                    <div class="text-[10px] text-gray-500 dark:text-gray-400 mb-1" id="label-fat">دهون</div>
+                    <div class="text-sm font-bold text-amber-600 dark:text-amber-500"><span id="total-fat">0</span>g</div>
+                    <div class="text-[9px] text-gray-500 dark:text-gray-400 mt-0.5" id="label-fat-target">هدف: 60g</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-[#1E293B] rounded-3xl p-5 shadow-lg border border-gray-200 dark:border-gray-800">
+            <div class="flex items-center justify-between mb-3">
+                <span id="label-free-badge" class="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">متاح مجاناً بالكامل ✨</span>
+                <h3 class="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-2"><span id="label-ai-features">ميزات الذكاء الاصطناعي المتطورة</span> <i class="fa-solid fa-wand-magic-sparkles text-purple-500 dark:text-purple-400"></i></h3>
+            </div>
+        
+            <div class="grid grid-cols-2 gap-3 mb-3">
+                <button onclick="askMealSuggestion()" class="bg-gray-100 dark:bg-[#2A374A] hover:bg-gray-200 dark:hover:bg-[#324155] p-3 rounded-2xl text-start transition border border-gray-200 dark:border-gray-700/50 flex flex-col justify-between relative overflow-hidden shadow-sm">
+                    <i class="fa-solid fa-lightbulb text-amber-500 text-lg mb-2"></i>
+                    <div>
+                        <div id="label-meal-sug" class="font-bold text-xs text-gray-900 dark:text-white mb-0.5">اقتراح وجبة</div>
+                        <div id="label-meal-sug-sub" class="text-[10px] text-gray-500 dark:text-gray-400">للسعرات المتبقية</div>
+                    </div>
+                </button>
+                <button onclick="toggleChat()" class="bg-gray-100 dark:bg-[#2A374A] hover:bg-gray-200 dark:hover:bg-[#324155] p-3 rounded-2xl text-start transition border border-gray-200 dark:border-gray-700/50 flex flex-col justify-between relative overflow-hidden shadow-sm">
+                    <i class="fa-solid fa-comments text-purple-600 dark:text-purple-400 text-lg mb-2"></i>
+                    <div>
+                        <div id="label-ai-chat" class="font-bold text-xs text-gray-900 dark:text-white mb-0.5">دردشة المستشار</div>
+                        <div id="label-ai-chat-sub" class="text-[10px] text-gray-500 dark:text-gray-400">اسأل عن التغذية والسعرات</div>
+                    </div>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="openFridgeModal()" class="bg-gradient-to-r from-purple-500/10 to-indigo-500/10 hover:from-purple-500/20 hover:to-indigo-500/20 p-3 rounded-2xl text-start transition border border-purple-500/30 flex flex-col justify-between relative overflow-hidden shadow-sm">
+                    <i class="fa-solid fa-bowl-food text-indigo-600 dark:text-indigo-400 text-lg mb-2"></i>
+                    <div>
+                        <div id="label-fridge-recipe" class="font-bold text-xs text-gray-900 dark:text-white mb-0.5">وصفات ثلاجتي الذكية</div>
+                        <div id="label-fridge-recipe-sub" class="text-[10px] text-gray-500 dark:text-gray-400">ابتكار وجبة من مكونات متاحة</div>
+                    </div>
+                </button>
+                <button onclick="openWeeklyPlanModal()" class="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 hover:from-emerald-500/20 hover:to-teal-500/20 p-3 rounded-2xl text-start transition border border-emerald-500/30 flex flex-col justify-between relative overflow-hidden shadow-sm">
+                    <i class="fa-solid fa-calendar-days text-emerald-600 dark:text-emerald-400 text-lg mb-2"></i>
+                    <div>
+                        <div id="label-weekly-plan" class="font-bold text-xs text-gray-900 dark:text-white mb-0.5">خطة نظام غذائي أسبوعي</div>
+                        <div id="label-weekly-plan-sub" class="text-[10px] text-gray-500 dark:text-gray-400">توليد جدول كامل بالذكاء الاصطناعي</div>
+                    </div>
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-[#1E293B] rounded-3xl p-5 shadow-lg border border-gray-200 dark:border-gray-800">
+            <div class="flex justify-between items-center mb-3">
+                <span id="label-total-recorded" class="text-xs text-gray-500 dark:text-gray-400">إجمالي الوجبات المسجلة</span>
+                <h3 class="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-2"><span id="label-today-meals">وجبات اليوم</span> <i class="fa-solid fa-utensils text-emerald-600 dark:text-emerald-400"></i></h3>
+            </div>
+            <div id="meals-container" class="space-y-3">
+                <div id="label-no-meals" class="text-center py-6 text-gray-500 dark:text-gray-400 text-xs">لم تتم إضافة أي وجبات اليوم. ابدأ بكتابة اسم الأكلة مجاناً!</div>
+            </div>
+        </div>
+    </main>
+
+    <div class="fixed bottom-3 left-3 right-3 max-w-xl mx-auto bg-white/95 dark:bg-[#111827]/95 backdrop-blur-md border border-gray-200 dark:border-gray-800 p-2.5 rounded-3xl z-40 shadow-2xl">
+        <div class="flex items-center gap-2">
+            <div class="relative">
+                <button onclick="toggleCameraMenu()" id="btn-camera-label" title="تصوير الوجبة" class="w-12 h-12 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl flex items-center justify-center cursor-pointer transition shadow-md flex-shrink-0 relative">
+                    <i class="fa-solid fa-camera text-base"></i>
+                </button>
+                <!-- قائمة خيارات الكاميرا والمعرض -->
+                <div id="camera-options-menu" class="hidden absolute bottom-14 rtl:right-0 ltr:left-0 w-48 bg-white dark:bg-[#1E293B] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 py-2 z-50 text-xs">
+                    <label class="w-full text-start px-4 py-2.5 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2.5 text-gray-700 dark:text-gray-200 cursor-pointer">
+                        <i class="fa-solid fa-camera-retro text-emerald-500"></i> <span id="menu-take-photo">التقاط صورة بالكاميرا</span>
+                        <input type="file" id="camera-capture-input" accept="image/*" capture="environment" class="hidden" onchange="handleImageUpload(event)">
+                    </label>
+                    <label class="w-full text-start px-4 py-2.5 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2.5 text-gray-700 dark:text-gray-200 cursor-pointer border-t border-gray-100 dark:border-gray-700/60 mt-1">
+                        <i class="fa-solid fa-image text-purple-500"></i> <span id="menu-gallery-photo">اختيار من المعرض</span>
+                        <input type="file" id="gallery-picker-input" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+                    </label>
+                </div>
+            </div>
+
+            <div class="relative flex-grow">
+                <input type="text" id="food-text-input" placeholder="اكتب اسم الأكلة هنا (مجاناً)..." class="w-full bg-gray-100 dark:bg-[#1E293B] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-xs rounded-2xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition border border-gray-200 dark:border-gray-800" onkeypress="if(event.key === 'Enter') handleTextFoodInput()">
+            </div>
+
+            <button onclick="handleTextFoodInput()" id="btn-send-food" title="إرسال" class="w-12 h-12 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl flex items-center justify-center transition shadow-md flex-shrink-0">
+                <i class="fa-solid fa-arrow-right rtl:rotate-180 text-sm"></i>
+            </button>
+
+            <button onclick="toggleChat()" id="btn-chat-toggle" title="دردشة المستشار الذكي" class="w-12 h-12 bg-purple-600 hover:bg-purple-700 text-white rounded-2xl flex items-center justify-center transition shadow-md flex-shrink-0">
+                <i class="fa-solid fa-comments text-base"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        const LOVABLE_AI_ENDPOINT = "/api/ai";
+
+        let currentLang = localStorage.getItem('amrLang') || 'ar';
+        let userProfile = JSON.parse(localStorage.getItem('amrUserProfile')) || {
+            name: 'عمرو',
+            weight: 75,
+            height: 175,
+            goal: 'maintain',
+            targetCalories: 2000,
+            protein: 150,
+            carbs: 220,
+            fat: 60
+        };
+
+        let mealsList = JSON.parse(localStorage.getItem('amrTodayMeals')) || [];
+        let streakDays = parseInt(localStorage.getItem('amrStreakDays')) || 1;
+        let historicalLogs = JSON.parse(localStorage.getItem('amrHistoricalLogs')) || {};
+        let advisorMessages = [];
+
+        function getLanguageName(lang) {
+            if (lang === 'ar') return 'Arabic (العربية)';
+            if (lang === 'en') return 'English';
+            if (lang === 'hi') return 'Hindi (हिन्दी)';
+            return 'Arabic';
+        }
+
+        function saveTodayToHistory() {
+            const todayStr = new Date().toISOString().split('T')[0];
+            historicalLogs[todayStr] = {
+                meals: mealsList,
+                calories: mealsList.reduce((acc, m) => acc + (m.calories || 0), 0),
+                protein: mealsList.reduce((acc, m) => acc + (m.protein || 0), 0),
+                carbs: mealsList.reduce((acc, m) => acc + (m.carbs || 0), 0),
+                fat: mealsList.reduce((acc, m) => acc + (m.fat || 0), 0)
+            };
+            localStorage.setItem('amrHistoricalLogs', JSON.stringify(historicalLogs));
+        }
+
+        const translations = {
+            ar: {
+                langName: "العربية",
+                welcomeTitle: "مرحباً بك! 👋",
+                welcomeDesc: "أدخل بياناتك الشخصية وهدفك لنقوم بتهيئة برنامجك الغذائي بدقة.",
+                nameLabel: "الاسم الكريم",
+                namePlaceholder: "اكتب اسمك هنا...",
+                weightLabel: "الوزن الحالي (كجم)",
+                weightPlaceholder: "مثال: 75",
+                heightLabel: "الطول (سم)",
+                heightPlaceholder: "مثال: 175",
+                goalLabel: "هدف النظام الغذائي",
+                optCut: "نقص الوزن (تنشيط / خسارة دهون)",
+                optBulk: "تضخيم (زيادة عضلية)",
+                optMaintain: "ثبات الوزن (محافظة)",
+                saveBtn: "حفظ البدء والحساب",
+                editTitle: "تعديل البيانات الشخصية",
+                editDesc: "قم بتحديث بياناتك وسعراتك المستهدفة فوراً.",
+                updateBtn: "تحديث الحساب والسعرات",
+                resultTitle: "برنامجك الغذائي المخصص",
+                resultDesc: "تم حساب السعرات والمغذيات الكبرى بناءً على بياناتك وهدفك بنجاح.",
+                kcalLabel: "كيلو كالوري",
+                protLabel: "بروتين",
+                carbLabel: "كارب",
+                fatLabel: "دهون",
+                startApp: "بدء استخدام التطبيق",
+                appName: "السعرات الذكية",
+                settingsMenu: "إعدادات التطبيق",
+                menuEdit: "تعديل البيانات الشخصية",
+                menuLang: "تغيير اللغة (AR / EN / HI)",
+                menuDark: "تبديل الوضع الداكن",
+                menuClear: "إعادة ضبط وجبات اليوم",
+                streakTitle: "أيام الاستمرارية والنشاط (اضغط للتفاصيل)",
+                streakDaysText: "أيام متتالية من تسجيل الدخول",
+                resultsStatus: "نتائج الحفظ",
+                resultsMeals: "وجبة مسجلة",
+                dailySummary: "ملخص اليوم",
+                goalPrefix: "الهدف:",
+                goalCutText: "تخسيس وزن",
+                goalBulkText: "تضخيم عضلات",
+                goalMaintainText: "ثبات الوزن",
+                fromText: "من",
+                proteinTarget: "هدف: ",
+                carbsTarget: "هدف: ",
+                fatTarget: "هدف: ",
+                freeBadge: "متاح مجاناً بالكامل ✨",
+                aiFeatures: "ميزات الذكاء الاصطناعي المتطورة",
+                mealSug: "اقتراح وجبة",
+                mealSugSub: "للسعرات المتبقية",
+                aiChat: "دردشة المستشار",
+                aiChatSub: "اسأل عن التغذية والسعرات",
+                fridgeRecipe: "وصفات ثلاجتي الذكية",
+                fridgeRecipeSub: "ابتكار وجبة من مكونات متاحة",
+                weeklyPlan: "خطة نظام غذائي أسبوعي",
+                weeklyPlanSub: "توليد جدول كامل بالذكاء الاصطناعي",
+                totalRecorded: "إجمالي الوجبات المسجلة",
+                todayMeals: "وجبات اليوم",
+                noMeals: "لم تتم إضافة أي وجبات اليوم. ابدأ بكتابة اسم الأكلة مجاناً!",
+                inputPlaceholder: "اكتب اسم الأكلة هنا (مجاناً)...",
+                chatTitle: "مدرب التغذية الذكي",
+                chatSubtitle: "اسأل عن أي نظام أو سعرات",
+                suggestBtn: "اقترح وجبة",
+                fridgeTitle: "شيف الثلاجة الذكي",
+                fridgeDesc: "اكتب المكونات المتوفرة لديك في الثلاجة، وسيقوم الذكاء الاصطناعي بابتكار وصفة صحية ومناسبة لسعراتك!",
+                fridgePlaceholder: "مثال: بيض، طماطم، جبن قريش، شوفان...",
+                fridgeSubmit: "ابتكر الوصفة الصحية",
+                weeklyTitle: "خطة النظام الغذائي الأسبوعي",
+                weeklySubmit: "توليد جدول الأسبوع بالذكاء الاصطناعي",
+                streakModalTitle: "سجل الاستمرارية والأيام",
+                streakModalDesc: "اختر أي يوم من الأيام التالية لعرض ملخص السعرات والوجبات المسجلة فيه:",
+                streakLabelDays: "أيام الاستمرارية المسجلة:",
+                streakLabelMeals: "إجمالي الوجبات المسجلة تاريخياً:",
+                mealDetailSubtitle: "تفاصيل السعرات والمغذيات الكبرى لهذه الوجبة",
+                takePhoto: "التقاط صورة بالكاميرا",
+                galleryPhoto: "اختيار من المعرض",
+                close: "إغلاق"
+            },
+            en: {
+                langName: "English",
+                welcomeTitle: "Welcome! 👋",
+                welcomeDesc: "Enter your personal details and goal to configure your nutrition program precisely.",
+                nameLabel: "Your Name",
+                namePlaceholder: "Type your name here...",
+                weightLabel: "Current Weight (kg)",
+                weightPlaceholder: "Ex: 75",
+                heightLabel: "Height (cm)",
+                heightPlaceholder: "Ex: 175",
+                goalLabel: "Dietary Goal",
+                optCut: "Weight Loss (Cutting / Fat Loss)",
+                optBulk: "Muscle Gain (Bulking)",
+                optMaintain: "Weight Maintenance",
+                saveBtn: "Save & Start Calculation",
+                editTitle: "Edit Personal Data",
+                editDesc: "Update your profile and calorie targets instantly.",
+                updateBtn: "Update Account & Calories",
+                resultTitle: "Your Customized Nutrition Plan",
+                resultDesc: "Calories and macros successfully calculated based on your metrics.",
+                kcalLabel: "kcal",
+                protLabel: "Protein",
+                carbLabel: "Carbs",
+                fatLabel: "Fat",
+                startApp: "Start Using App",
+                appName: "Smart Calories",
+                settingsMenu: "App Settings",
+                menuEdit: "Edit Personal Data",
+                menuLang: "Change Language (AR / EN / HI)",
+                menuDark: "Toggle Dark Mode",
+                menuClear: "Reset Today's Meals",
+                streakTitle: "Streak & Activity Days (Click for Details)",
+                streakDaysText: "Consecutive login days",
+                resultsStatus: "Saved Results",
+                resultsMeals: "Recorded meals",
+                dailySummary: "Today's Summary",
+                goalPrefix: "Goal:",
+                goalCutText: "Cutting",
+                goalBulkText: "Bulking",
+                goalMaintainText: "Maintenance",
+                fromText: "out of",
+                proteinTarget: "Target: ",
+                carbsTarget: "Target: ",
+                fatTarget: "Target: ",
+                freeBadge: "100% Free ✨",
+                aiFeatures: "Advanced AI Features",
+                mealSug: "Meal Suggestion",
+                mealSugSub: "For remaining calories",
+                aiChat: "AI Coach Chat",
+                aiChatSub: "Ask about nutrition & calories",
+                fridgeRecipe: "Smart Fridge Recipes",
+                fridgeRecipeSub: "Create meal from available items",
+                weeklyPlan: "Weekly Diet Plan",
+                weeklyPlanSub: "Generate full schedule via AI",
+                totalRecorded: "Total Recorded Meals",
+                todayMeals: "Today's Meals",
+                noMeals: "No meals added today. Type a food name for free!",
+                inputPlaceholder: "Type food name here (free)...",
+                chatTitle: "AI Nutrition Coach",
+                chatSubtitle: "Ask about any diet or calories",
+                suggestBtn: "Suggest Meal",
+                fridgeTitle: "Smart Fridge Chef",
+                fridgeDesc: "Type ingredients in your fridge, and AI will create a healthy recipe fitting your calories!",
+                fridgePlaceholder: "Ex: eggs, tomatoes, cottage cheese, oats...",
+                fridgeSubmit: "Create Healthy Recipe",
+                weeklyTitle: "Weekly Diet Plan Schedule",
+                weeklySubmit: "Generate Weekly Plan via AI",
+                streakModalTitle: "Streak & Days Record",
+                streakModalDesc: "Select any of the following days to view calorie summary and logged meals:",
+                streakLabelDays: "Registered streak days:",
+                streakLabelMeals: "Total historical meals:",
+                mealDetailSubtitle: "Calories and macro nutrients details for this meal",
+                takePhoto: "Take Photo with Camera",
+                galleryPhoto: "Choose from Gallery",
+                close: "Close"
+            },
+            hi: {
+                langName: "हिन्दी",
+                welcomeTitle: "स्वागत है! 👋",
+                welcomeDesc: "अपने पोषण कार्यक्रम को ठीक से कॉन्फ़िगर करने के लिए अपने व्यक्तिगत विवरण और लक्ष्य दर्ज करें।",
+                nameLabel: "आपका नाम",
+                namePlaceholder: "यहाँ अपना नाम लिखें...",
+                weightLabel: "वर्तमान वजन (किग्रा)",
+                weightPlaceholder: "उदा: 75",
+                heightLabel: "लंबाई (सेमी)",
+                heightPlaceholder: "उदा: 175",
+                goalLabel: "आहार लक्ष्य",
+                optCut: "वजन घटाना (फैट लॉस)",
+                optBulk: "मांसपेशियां बढ़ाना (बल्किंग)",
+                optMaintain: "वजन बनाए रखना",
+                saveBtn: "सहेजें और गणना शुरू करें",
+                editTitle: "व्यक्तिगत डेटा संपादित करें",
+                editDesc: "अपनी प्रोफ़ाइल और कैलोरी लक्ष्यों को तुरंत अपडेट करें।",
+                updateBtn: "खाता और कैलोरी अपडेट करें",
+                resultTitle: "आपकी अनुकूलित पोषण योजना",
+                resultDesc: "आपकी मेट्रिक्स के आधार पर कैलोरी और मैक्रोज़ सफलतापूर्वक गणना किए गए।",
+                kcalLabel: "किलो कैलोरी",
+                protLabel: "प्रोटीन",
+                carbLabel: "कार्ब्स",
+                fatLabel: "वसा",
+                startApp: "ऐप का उपयोग शुरू करें",
+                appName: "स्मार्ट कैलोरी",
+                settingsMenu: "ऐप सेटिंग्स",
+                menuEdit: "व्यक्तिगत डेटा संपादित करें",
+                menuLang: "भाषा बदलें (AR / EN / HI)",
+                menuDark: "डार्क मोड टॉगल करें",
+                menuClear: "आज के भोजन रीसेट करें",
+                streakTitle: "स्ट्रीक और गतिविधि (विवरण के लिए क्लिक करें)",
+                streakDaysText: "लगातार लॉगिन दिन",
+                resultsStatus: "सहेजे गए परिणाम",
+                resultsMeals: "दर्ज भोजन",
+                dailySummary: "आज का सारांश",
+                goalPrefix: "लक्ष्य:",
+                goalCutText: "कटिंग",
+                goalBulkText: "बल्किंग",
+                goalMaintainText: "मेंटेनेंस",
+                fromText: "में से",
+                proteinTarget: "लक्ष्य: ",
+                carbsTarget: "लक्ष्य: ",
+                fatTarget: "लक्ष्य: ",
+                freeBadge: "100% निःशुल्क ✨",
+                aiFeatures: "उन्नत एआई सुविधाएँ",
+                mealSug: "भोजन सुझाव",
+                mealSugSub: "शेष कैलोरी के लिए",
+                aiChat: "एआई कोच चैट",
+                aiChatSub: "पोषण और कैलोरी के बारे में पूछें",
+                fridgeRecipe: "स्मार्ट फ्रिज रेसिपी",
+                fridgeRecipeSub: "उपलब्ध सामग्री से भोजन बनाएं",
+                weeklyPlan: "साप्ताहिक आहार योजना",
+                weeklyPlanSub: "एआई के माध्यम से पूरा शेड्यूल बनाएं",
+                totalRecorded: "कुल दर्ज भोजन",
+                todayMeals: "आज के भोजन",
+                noMeals: "आज कोई भोजन नहीं जोड़ा गया। मुफ्त में भोजन का नाम टाइप करें!",
+                inputPlaceholder: "यहाँ भोजन का नाम लिखें...",
+                chatTitle: "एआई पोषण कोच",
+                chatSubtitle: "किसी भी आहार या कैलोरी के बारे में पूछें",
+                suggestBtn: "भोजन सुझाएं",
+                fridgeTitle: "स्मार्ट फ्रिज शेफ",
+                fridgeDesc: "अपने फ्रिज में सामग्री टाइप करें, और एआई आपकी कैलोरी के अनुकूल एक स्वस्थ नुस्खा बनाएगा!",
+                fridgePlaceholder: "उदा: अंडे, टमाटर, पनीर, ओट्स...",
+                fridgeSubmit: "स्वस्थ नुस्खा बनाएं",
+                weeklyTitle: "साप्ताहिक आहार योजना अनुसूची",
+                weeklySubmit: "एआई के माध्यम से साप्ताहिक योजना बनाएं",
+                streakModalTitle: "स्ट्रीक और दिन रिकॉर्ड",
+                streakModalDesc: "कैलोरी सारांश और दर्ज भोजन देखने के लिए निम्नलिखित में से किसी भी दिन का चयन करें:",
+                streakLabelDays: "पंजीकृत स्ट्रीक दिन:",
+                streakLabelMeals: "कुल ऐतिहासिक भोजन:",
+                mealDetailSubtitle: "इस भोजन के लिए कैलोरी और मैक्रोन्यूट्रिएंट्स विवरण",
+                takePhoto: "कैमरे से फोटो लें",
+                galleryPhoto: "गैलरी से चुनें",
+                close: "बंद करें"
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            applyLanguage(currentLang);
+            saveTodayToHistory();
+            if (!localStorage.getItem('amrUserProfile')) {
+                const modal = document.getElementById('onboarding-modal');
+                if (modal) modal.classList.remove('hidden');
+            } else {
+                const modal = document.getElementById('onboarding-modal');
+                if (modal) modal.classList.add('hidden');
+            }
+            updateUI();
+        });
+
+        function cycleLanguage() {
+            if (currentLang === 'ar') currentLang = 'en';
+            else if (currentLang === 'en') currentLang = 'hi';
+            else currentLang = 'ar';
+            
+            localStorage.setItem('amrLang', currentLang);
+            applyLanguage(currentLang);
+        }
+
+        function safeSetText(id, text) {
+            const el = document.getElementById(id);
+            if (el) el.innerText = text;
+        }
+
+        function safeSetPlaceholder(id, placeholder) {
+            const el = document.getElementById(id);
+            if (el) el.placeholder = placeholder;
+        }
+
+        function applyLanguage(lang) {
+            currentLang = lang;
+            const t = translations[lang] || translations['ar'];
+            const root = document.getElementById('html-root');
+            if (root) {
+                root.setAttribute('lang', lang);
+                root.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+            }
+
+            safeSetText('txt-onboarding-lang', t.langName);
+            safeSetText('welcome-title', t.welcomeTitle);
+            safeSetText('welcome-desc', t.welcomeDesc);
+            safeSetText('label-name-input', t.nameLabel);
+            safeSetPlaceholder('user-name', t.namePlaceholder);
+            safeSetText('label-weight-input', t.weightLabel);
+            safeSetPlaceholder('user-weight', t.weightPlaceholder);
+            safeSetText('label-height-input', t.heightLabel);
+            safeSetPlaceholder('user-height', t.heightPlaceholder);
+            safeSetText('label-goal-select', t.goalLabel);
+            safeSetText('opt-goal-cut', t.optCut);
+            safeSetText('opt-goal-bulk', t.optBulk);
+            safeSetText('opt-goal-maintain', t.optMaintain);
+            safeSetText('txt-save-btn', t.saveBtn);
+
+            safeSetText('label-edit-profile-title', t.editTitle);
+            safeSetText('label-edit-profile-desc', t.editDesc);
+            safeSetText('label-edit-name', t.nameLabel);
+            safeSetText('label-edit-weight', t.weightLabel);
+            safeSetText('label-edit-height', t.heightLabel);
+            safeSetText('label-edit-goal', t.goalLabel);
+            safeSetText('opt-edit-cut', t.optCut);
+            safeSetText('opt-edit-bulk', t.optBulk);
+            safeSetText('opt-edit-maintain', t.optMaintain);
+            safeSetText('txt-update-btn', t.updateBtn);
+
+            safeSetText('result-modal-title', t.resultTitle);
+            safeSetText('result-modal-desc', t.resultDesc);
+            safeSetText('modal-kcal-label', t.kcalLabel);
+            safeSetText('modal-prot-label', t.protLabel);
+            safeSetText('modal-carb-label', t.carbLabel);
+            safeSetText('modal-fat-label', t.fatLabel);
+            safeSetText('result-modal-btn', t.startApp);
+
+            safeSetText('app-title-header', t.appName);
+            safeSetText('settings-menu-title', t.settingsMenu);
+            safeSetText('menu-edit-profile', t.menuEdit);
+            safeSetText('menu-lang-switch', t.menuLang);
+            safeSetText('menu-dark-mode', t.menuDark);
+            safeSetText('menu-clear-meals', t.menuClear);
+
+            safeSetText('label-streak-title', t.streakTitle);
+            safeSetText('label-streak-days', t.streakDaysText);
+            safeSetText('label-results-status', t.resultsStatus);
+            safeSetText('label-results-meals', t.resultsMeals);
+            safeSetText('label-daily-summary', t.dailySummary);
+            safeSetText('label-goal-text', t.goalPrefix);
+            safeSetText('label-from-text', t.fromText);
+            safeSetText('label-kcal-text', t.kcalLabel);
+
+            safeSetText('label-protein', t.protLabel);
+            safeSetText('label-carbs', t.carbLabel);
+            safeSetText('label-fat', t.fatLabel);
+            safeSetText('label-free-badge', t.freeBadge);
+            safeSetText('label-ai-features', t.aiFeatures);
+            safeSetText('label-meal-sug', t.mealSug);
+            safeSetText('label-meal-sug-sub', t.mealSugSub);
+            safeSetText('label-ai-chat', t.aiChat);
+            safeSetText('label-ai-chat-sub', t.aiChatSub);
+            safeSetText('label-fridge-recipe', t.fridgeRecipe);
+            safeSetText('label-fridge-recipe-sub', t.fridgeRecipeSub);
+            safeSetText('label-weekly-plan', t.weeklyPlan);
+            safeSetText('label-weekly-plan-sub', t.weeklyPlanSub);
+
+            safeSetText('label-total-recorded', t.totalRecorded);
+            safeSetText('label-today-meals', t.todayMeals);
+            safeSetPlaceholder('food-text-input', t.inputPlaceholder);
+
+            safeSetText('chat-title', t.chatTitle);
+            safeSetText('chat-subtitle', t.chatSubtitle);
+            safeSetText('txt-suggest-btn', t.suggestBtn);
+
+            safeSetText('fridge-modal-title', t.fridgeTitle);
+            safeSetText('fridge-modal-desc', t.fridgeDesc);
+            safeSetPlaceholder('fridge-ingredients', t.fridgePlaceholder);
+            safeSetText('fridge-submit-btn', t.fridgeSubmit);
+
+            safeSetText('weekly-modal-title', t.weeklyTitle);
+            safeSetText('weekly-submit-btn', t.weeklySubmit);
+
+            safeSetText('streak-modal-title', t.streakModalTitle);
+            safeSetText('streak-label-days', t.streakLabelDays);
+            safeSetText('streak-label-meals', t.streakLabelMeals);
+
+            safeSetText('detail-kcal-label', t.kcalLabel);
+            safeSetText('detail-prot-label', t.protLabel);
+            safeSetText('detail-carb-label', t.carbLabel);
+            safeSetText('detail-fat-label', t.fatLabel);
+            safeSetText('detail-meal-subtitle', t.mealDetailSubtitle);
+            safeSetText('menu-take-photo', t.takePhoto);
+            safeSetText('menu-gallery-photo', t.galleryPhoto);
+            safeSetText('detail-close-btn', t.close);
+
+            updateGoalBadgeText();
+        }
+
+        function updateGoalBadgeText() {
+            const t = translations[currentLang] || translations['ar'];
+            const goalEl = document.getElementById('label-goal-type');
+            if (goalEl) {
+                if (userProfile.goal === 'cut') goalEl.innerText = t.goalCutText;
+                else if (userProfile.goal === 'bulk') goalEl.innerText = t.goalBulkText;
+                else goalEl.innerText = t.goalMaintainText;
+            }
+        }
+
+        function calculateMacros() {
+            let w = userProfile.weight || 75;
+            let h = userProfile.height || 175;
+            let bmr = 10 * w + 6.25 * h - 5 * 25 + 5;
+            let tdee = bmr * 1.375;
+
+            if (userProfile.goal === 'cut') {
+                userProfile.targetCalories = Math.round(tdee - 500);
+            } else if (userProfile.goal === 'bulk') {
+                userProfile.targetCalories = Math.round(tdee + 400);
+            } else {
+                userProfile.targetCalories = Math.round(tdee);
+            }
+
+            userProfile.protein = Math.round((userProfile.targetCalories * 0.3) / 4);
+            userProfile.carbs = Math.round((userProfile.targetCalories * 0.45) / 4);
+            userProfile.fat = Math.round((userProfile.targetCalories * 0.25) / 9);
+
+            localStorage.setItem('amrUserProfile', JSON.stringify(userProfile));
+        }
+
+        function saveUserProfile() {
+            const nameInput = document.getElementById('user-name');
+            const weightInput = document.getElementById('user-weight');
+            const heightInput = document.getElementById('user-height');
+            const goalInput = document.getElementById('user-goal');
+
+            const name = nameInput ? nameInput.value.trim() : 'عمرو';
+            const weight = weightInput ? parseFloat(weightInput.value) || 75 : 75;
+            const height = heightInput ? parseFloat(heightInput.value) || 175 : 175;
+            const goal = goalInput ? goalInput.value : 'maintain';
+
+            userProfile.name = name;
+            userProfile.weight = weight;
+            userProfile.height = height;
+            userProfile.goal = goal;
+
+            calculateMacros();
+            localStorage.setItem('amrUserProfile', JSON.stringify(userProfile));
+            
+            const onboardingModal = document.getElementById('onboarding-modal');
+            if (onboardingModal) onboardingModal.classList.add('hidden');
+
+            safeSetText('modal-target-calories', userProfile.targetCalories);
+            safeSetText('modal-target-protein', userProfile.protein);
+            safeSetText('modal-target-carbs', userProfile.carbs);
+            safeSetText('modal-target-fat', userProfile.fat);
+
+            const resultModal = document.getElementById('result-summary-modal');
+            if (resultModal) resultModal.classList.remove('hidden');
+
+            updateUI();
+        }
+
+        function openEditProfileModal() {
+            const nameEl = document.getElementById('edit-user-name');
+            const weightEl = document.getElementById('edit-user-weight');
+            const heightEl = document.getElementById('edit-user-height');
+            const goalEl = document.getElementById('edit-user-goal');
+
+            if (nameEl) nameEl.value = userProfile.name || '';
+            if (weightEl) weightEl.value = userProfile.weight || '';
+            if (heightEl) heightEl.value = userProfile.height || '';
+            if (goalEl) goalEl.value = userProfile.goal || 'maintain';
+
+            const modal = document.getElementById('edit-profile-modal');
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeEditProfileModal() {
+            const modal = document.getElementById('edit-profile-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function updateUserProfile() {
+            const nameEl = document.getElementById('edit-user-name');
+            const weightEl = document.getElementById('edit-user-weight');
+            const heightEl = document.getElementById('edit-user-height');
+            const goalEl = document.getElementById('edit-user-goal');
+
+            const name = nameEl ? nameEl.value.trim() || userProfile.name : userProfile.name;
+            const weight = weightEl ? parseFloat(weightEl.value) || userProfile.weight : userProfile.weight;
+            const height = heightEl ? parseFloat(heightEl.value) || userProfile.height : userProfile.height;
+            const goal = goalEl ? goalEl.value : userProfile.goal;
+
+            userProfile.name = name;
+            userProfile.weight = weight;
+            userProfile.height = height;
+            userProfile.goal = goal;
+
+            calculateMacros();
+            localStorage.setItem('amrUserProfile', JSON.stringify(userProfile));
+            closeEditProfileModal();
+            updateUI();
+        }
+
+        function closeResultModal() {
+            const modal = document.getElementById('result-summary-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function toggleSettingsDropdown() {
+            const drop = document.getElementById('settings-dropdown');
+            if (drop) drop.classList.toggle('hidden');
+            const camMenu = document.getElementById('camera-options-menu');
+            if (camMenu) camMenu.classList.add('hidden');
+        }
+
+        function toggleCameraMenu() {
+            const menu = document.getElementById('camera-options-menu');
+            if (menu) menu.classList.toggle('hidden');
+            const drop = document.getElementById('settings-dropdown');
+            if (drop) drop.classList.add('hidden');
+        }
+
+        // غلق القوائم عند النقر في أي مكان خارجها
+        window.addEventListener('click', function(e) {
+            const camBtn = document.getElementById('btn-camera-label');
+            const camMenu = document.getElementById('camera-options-menu');
+            if (camMenu && !camMenu.contains(e.target) && camBtn && !camBtn.contains(e.target)) {
+                camMenu.classList.add('hidden');
+            }
+        });
+
+        function toggleDarkMode() {
+            const root = document.getElementById('html-root');
+            if (root) root.classList.toggle('dark');
+        }
+
+        function openStreakHistoryModal() {
+            saveTodayToHistory();
+            renderWeeklyCalendar();
+            const modal = document.getElementById('streak-modal');
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function renderWeeklyCalendar() {
+            const container = document.getElementById('weekly-days-list');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const daysOfWeek = [];
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                const dateStr = d.toISOString().split('T')[0];
+                const dayName = d.toLocaleDateString(currentLang === 'ar' ? 'ar-SA' : (currentLang === 'en' ? 'en-US' : 'hi-IN'), { weekday: 'short' });
+                const dayNum = d.getDate();
+                daysOfWeek.push({ dateStr, dayName, dayNum });
+            }
+
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            container.innerHTML = daysOfWeek.map(item => {
+                const hasData = historicalLogs[item.dateStr] && historicalLogs[item.dateStr].meals.length > 0;
+                const isToday = item.dateStr === todayStr;
+                return `
+                    <div onclick="selectHistoryDay('${item.dateStr}')" class="flex flex-col items-center justify-center p-2 rounded-2xl cursor-pointer transition border ${isToday ? 'border-emerald-500 bg-emerald-500/10' : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#111827] hover:border-emerald-400'}">
+                        <span class="text-[10px] text-gray-500 dark:text-gray-400 font-bold">${item.dayName}</span>
+                        <span class="text-xs font-black text-gray-900 dark:text-white my-1">${item.dayNum}</span>
+                        <span class="w-2 h-2 rounded-full ${hasData ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-700'}"></span>
+                    </div>
+                `;
+            }).join('');
+
+            selectHistoryDay(todayStr);
+        }
+
+        function selectHistoryDay(dateStr) {
+            const detailsDiv = document.getElementById('selected-day-details');
+            if (!detailsDiv) return;
+            const data = historicalLogs[dateStr] || { meals: [], calories: 0, protein: 0, carbs: 0, fat: 0 };
+
+            const formattedDate = new Date(dateStr).toLocaleDateString(currentLang === 'ar' ? 'ar-SA' : (currentLang === 'en' ? 'en-US' : 'hi-IN'), { year: 'numeric', month: 'long', day: 'numeric' });
+
+            let mealsHtml = '';
+            if (data.meals.length === 0) {
+                mealsHtml = `<div class="text-center text-gray-400 py-3">${currentLang === 'ar' ? 'لم يتم تسجيل وجبات في هذا اليوم.' : (currentLang === 'hi' ? 'इस दिन कोई भोजन दर्ज नहीं किया गया है।' : 'No meals recorded for this day.')}</div>`;
+            } else {
+                mealsHtml = data.meals.map(m => `
+                    <div class="bg-white dark:bg-[#1F293B] p-2.5 rounded-xl flex items-center justify-between border border-gray-200 dark:border-gray-700/50 shadow-xs">
+                        <div>
+                            <div class="font-bold text-gray-900 dark:text-white">${m.name || 'وجبة'}</div>
+                            <div class="text-[10px] text-gray-500">P: ${m.protein}g | C: ${m.carbs}g | F: ${m.fat}g</div>
+                        </div>
+                        <div class="font-extrabold text-emerald-600 dark:text-emerald-400">${m.calories} kcal</div>
+                    </div>
+                `).join('');
+            }
+
+            detailsDiv.innerHTML = `
+                <div class="font-bold text-emerald-600 dark:text-emerald-400 mb-2 flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
+                    <span>${formattedDate}</span>
+                    <span class="bg-emerald-500/10 px-2 py-0.5 rounded-full text-[10px]">${data.calories} kcal</span>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-center mb-3">
+                    <div class="bg-white dark:bg-[#1F293B] p-2 rounded-xl border border-gray-200 dark:border-gray-700/50">
+                        <div class="text-[9px] text-gray-500">${translations[currentLang].protLabel}</div>
+                        <div class="font-bold text-blue-600 dark:text-blue-400">${data.protein}g</div>
+                    </div>
+                    <div class="bg-white dark:bg-[#1F293B] p-2 rounded-xl border border-gray-200 dark:border-gray-700/50">
+                        <div class="text-[9px] text-gray-500">${translations[currentLang].carbLabel}</div>
+                        <div class="font-bold text-emerald-600 dark:text-emerald-400">${data.carbs}g</div>
+                    </div>
+                    <div class="bg-white dark:bg-[#1F293B] p-2 rounded-xl border border-gray-200 dark:border-gray-700/50">
+                        <div class="text-[9px] text-gray-500">${translations[currentLang].fatLabel}</div>
+                        <div class="font-bold text-amber-600 dark:text-amber-500">${data.fat}g</div>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <div class="font-semibold text-gray-700 dark:text-gray-300 text-[11px]">${currentLang === 'ar' ? 'الوجبات المسجلة:' : (currentLang === 'hi' ? 'दर्ज भोजन:' : 'Recorded Meals:')}</div>
+                    ${mealsHtml}
+                </div>
+            `;
+        }
+
+        function closeStreakHistoryModal() {
+            const modal = document.getElementById('streak-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function openFridgeModal() {
+            const modal = document.getElementById('fridge-modal');
+            if (modal) modal.classList.remove('hidden');
+        }
+        function closeFridgeModal() {
+            const modal = document.getElementById('fridge-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function openWeeklyPlanModal() {
+            const modal = document.getElementById('weekly-plan-modal');
+            if (modal) modal.classList.remove('hidden');
+        }
+        function closeWeeklyPlanModal() {
+            const modal = document.getElementById('weekly-plan-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function toggleChat() {
+            const win = document.getElementById('chat-window');
+            if (win) {
+                win.classList.toggle('hidden');
+                win.classList.toggle('flex');
+            }
+        }
+
+        function updateUI() {
+            safeSetText('user-greeting-badge', (currentLang === 'ar' ? 'أهلاً ' : (currentLang === 'en' ? 'Hello ' : 'नमस्ते ')) + userProfile.name);
+            safeSetText('display-target-kcal', userProfile.targetCalories);
+            safeSetText('streak-days-count', streakDays);
+            safeSetText('results-total-meals-count', mealsList.length);
+
+            const totalCal = mealsList.reduce((acc, m) => acc + (m.calories || 0), 0);
+            const totalProt = mealsList.reduce((acc, m) => acc + (m.protein || 0), 0);
+            const totalCarb = mealsList.reduce((acc, m) => acc + (m.carbs || 0), 0);
+            const totalFat = mealsList.reduce((acc, m) => acc + (m.fat || 0), 0);
+
+            safeSetText('total-calories', totalCal);
+            safeSetText('total-protein', totalProt);
+            safeSetText('total-carbs', totalCarb);
+            safeSetText('total-fat', totalFat);
+
+            const t = translations[currentLang] || translations['ar'];
+            safeSetText('label-protein-target', t.proteinTarget + userProfile.protein + 'g');
+            safeSetText('label-carbs-target', t.carbsTarget + userProfile.carbs + 'g');
+            safeSetText('label-fat-target', t.fatTarget + userProfile.fat + 'g');
+
+            updateGoalBadgeText();
+
+            const container = document.getElementById('meals-container');
+            if (container) {
+                if (mealsList.length === 0) {
+                    container.innerHTML = `<div class="text-center py-6 text-gray-500 dark:text-gray-400 text-xs">${t.noMeals}</div>`;
+                } else {
+                    container.innerHTML = mealsList.map((m, idx) => {
+                        let mealDisplayName = m.name;
+                        if (currentLang === 'en' && m.nameEn) mealDisplayName = m.nameEn;
+                        if (currentLang === 'hi' && m.nameHi) mealDisplayName = m.nameHi;
+                        if (!mealDisplayName) mealDisplayName = m.name || (currentLang === 'ar' ? 'وجبة غذائية' : (currentLang === 'hi' ? 'भोजन' : 'Meal'));
+
+                        return `
+                        <div onclick='openMealDetail(${idx})' class="bg-gray-50 dark:bg-[#2A374A]/50 border border-gray-200 dark:border-gray-700/60 p-3.5 rounded-2xl flex items-center justify-between cursor-pointer hover:border-emerald-500 transition shadow-sm">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl flex items-center justify-center font-bold">
+                                    <i class="fa-solid fa-utensils"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-gray-900 dark:text-white text-xs">${mealDisplayName}</h4>
+                                    <p class="text-[10px] text-gray-500 dark:text-gray-400">P: ${m.protein}g | C: ${m.carbs}g | F: ${m.fat}g</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="font-extrabold text-emerald-600 dark:text-emerald-400 text-xs">${m.calories} <span class="text-[9px] font-normal text-gray-500">kcal</span></span>
+                                <button onclick="event.stopPropagation(); deleteMeal(${idx})" class="text-gray-400 hover:text-red-500 p-1.5"><i class="fa-solid fa-trash-can text-xs"></i></button>
+                            </div>
+                        </div>
+                    `;
+                    }).join('');
+                }
+            }
+        }
+
+        async function callAI(promptText, options = {}) {
+            const payload = options.messages
+                ? { messages: options.messages }
+                : { prompt: promptText, ...(options.image ? { image: options.image } : {}) };
+            const response = await fetch(LOVABLE_AI_ENDPOINT, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                throw new Error(data.error || 'Lovable AI request failed.');
+            }
+            if (!data.text) throw new Error('Lovable AI returned an empty response.');
+            return data.text;
+        }
+
+        function showAIError(error) {
+            console.error(error);
+            const fallback = currentLang === 'ar'
+                ? 'تعذر إكمال الطلب الآن. يرجى المحاولة مرة أخرى.'
+                : (currentLang === 'hi' ? 'अनुरोध अभी पूरा नहीं हो सका। कृपया फिर से प्रयास करें।' : 'The request could not be completed. Please try again.');
+            alert(error?.message || fallback);
+        }
+
+        function appendChatMessage(container, content, isUser) {
+            const message = document.createElement('div');
+            message.className = isUser
+                ? 'bg-purple-600 text-white rounded-2xl p-3 shadow-sm max-w-[85%] self-end whitespace-pre-wrap'
+                : 'bg-gray-100 dark:bg-[#2A374A] text-gray-800 dark:text-gray-200 rounded-2xl p-3 shadow-sm max-w-[85%] leading-relaxed';
+            if (isUser) {
+                message.textContent = content;
+            } else if (window.marked && window.DOMPurify) {
+                message.innerHTML = window.DOMPurify.sanitize(window.marked.parse(content));
+            } else {
+                message.textContent = content;
+                message.classList.add('whitespace-pre-wrap');
+            }
+            container.appendChild(message);
+        }
+
+        function cleanJsonString(str) {
+            let clean = str.trim();
+            if (clean.startsWith('```json')) {
+                clean = clean.replace(/^```json/, '').replace(/```$/, '').trim();
+            } else if (clean.startsWith('```')) {
+                clean = clean.replace(/^```/, '').replace(/```$/, '').trim();
+            }
+            return clean;
+        }
+
+        async function analyzeFoodWithAI(foodName) {
+            const langName = getLanguageName(currentLang);
+            const prompt = `Analyze food item "${foodName}". Provide the meal name in Arabic, English, and Hindi. Return ONLY a JSON object with keys:
+"name": "Meal name in Arabic",
+"nameEn": "Meal name in English",
+"nameHi": "Meal name in Hindi",
+"calories": number (kcal),
+"protein": number (grams),
+"carbs": number (grams),
+"fat": number (grams).
+No markdown outside json.`;
+            const cacheKey = foodName.trim().toLowerCase();
+            let cache = {};
+            try { cache = JSON.parse(localStorage.getItem('amrFoodCache') || '{}'); } catch (_) {}
+            if (cache[cacheKey]) return cache[cacheKey];
+            try {
+                const res = await callAI(prompt);
+                const parsed = JSON.parse(cleanJsonString(res));
+                cache[cacheKey] = parsed;
+                const keys = Object.keys(cache);
+                if (keys.length > 200) delete cache[keys[0]];
+                localStorage.setItem('amrFoodCache', JSON.stringify(cache));
+                return parsed;
+            } catch (e) {
+                showAIError(e);
+                throw e;
+            }
+        }
+
+        async function handleTextFoodInput() {
+            const input = document.getElementById('food-text-input');
+            if (!input) return;
+            const val = input.value.trim();
+            if (!val) return;
+            input.value = '';
+
+            const btn = document.getElementById('btn-send-food');
+            if (btn) btn.innerHTML = '<i class="fa-solid fa-spinner animate-spin text-xs"></i>';
+
+            try {
+                const foodData = await analyzeFoodWithAI(val);
+                mealsList.push(foodData);
+                localStorage.setItem('amrTodayMeals', JSON.stringify(mealsList));
+                saveTodayToHistory();
+                updateUI();
+            } catch (err) {
+                console.error(err);
+            } finally {
+                if (btn) btn.innerHTML = '<i class="fa-solid fa-arrow-right rtl:rotate-180 text-sm"></i>';
+            }
+        }
+
+        async function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // إخفاء قائمة الكاميرا عند اختيار الصورة
+            const camMenu = document.getElementById('camera-options-menu');
+            if (camMenu) camMenu.classList.add('hidden');
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const base64Data = e.target.result.split(',')[1];
+                const mimeType = file.type;
+
+                const btnLabel = document.getElementById('btn-camera-label');
+                if (btnLabel) btnLabel.innerHTML = '<i class="fa-solid fa-spinner animate-spin text-sm"></i>';
+
+                try {
+                    const langName = getLanguageName(currentLang);
+                    const reply = await callAI(
+                        `Analyze this food image. Provide the meal name in Arabic, English, and Hindi. Return ONLY valid JSON with keys: name, nameEn, nameHi, calories, protein, carbs, fat. Nutrition values must be numbers. The active language is ${langName}.`,
+                        { image: { mimeType, data: base64Data } }
+                    );
+                    const foodData = JSON.parse(cleanJsonString(reply));
+                    mealsList.push(foodData);
+                    localStorage.setItem('amrTodayMeals', JSON.stringify(mealsList));
+                    saveTodayToHistory();
+                    updateUI();
+                } catch (err) {
+                    showAIError(err);
+                } finally {
+                    if (btnLabel) btnLabel.innerHTML = '<i class="fa-solid fa-camera text-base"></i>';
+                    event.target.value = '';
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function deleteMeal(idx) {
+            mealsList.splice(idx, 1);
+            localStorage.setItem('amrTodayMeals', JSON.stringify(mealsList));
+            saveTodayToHistory();
+            updateUI();
+        }
+
+        function clearAllMeals() {
+            mealsList = [];
+            localStorage.setItem('amrTodayMeals', JSON.stringify(mealsList));
+            saveTodayToHistory();
+            updateUI();
+        }
+
+        function openMealDetail(idx) {
+            const m = mealsList[idx];
+            if (!m) return;
+            
+            let mealDisplayName = m.name;
+            if (currentLang === 'en' && m.nameEn) mealDisplayName = m.nameEn;
+            if (currentLang === 'hi' && m.nameHi) mealDisplayName = m.nameHi;
+            if (!mealDisplayName) mealDisplayName = m.name || (currentLang === 'ar' ? 'وجبة طعام' : (currentLang === 'hi' ? 'भोजन' : 'Meal'));
+
+            const t = translations[currentLang] || translations['ar'];
+
+            safeSetText('detail-meal-name', mealDisplayName);
+            safeSetText('detail-meal-subtitle', t.mealDetailSubtitle);
+            safeSetText('detail-kcal-label', t.kcalLabel);
+            safeSetText('detail-prot-label', t.protLabel);
+            safeSetText('detail-carb-label', t.carbLabel);
+            safeSetText('detail-fat-label', t.fatLabel);
+            safeSetText('detail-close-btn', t.close);
+
+            safeSetText('detail-meal-calories', m.calories || 0);
+            safeSetText('detail-meal-protein', m.protein || 0);
+            safeSetText('detail-meal-carbs', m.carbs || 0);
+            safeSetText('detail-meal-fat', m.fat || 0);
+            
+            const modal = document.getElementById('meal-detail-modal');
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeMealDetailModal() {
+            const modal = document.getElementById('meal-detail-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        async function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            if (!input) return;
+            const txt = input.value.trim();
+            if (!txt) return;
+            input.value = '';
+
+            const chatMessages = document.getElementById('chat-messages');
+            if (!chatMessages) return;
+
+            appendChatMessage(chatMessages, txt, true);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            const loadingId = 'loading-' + Date.now();
+            const loadingText = currentLang === 'ar' ? 'جاري التفكير...' : (currentLang === 'hi' ? 'सोच रहा है...' : 'Thinking...');
+            chatMessages.innerHTML += `<div id="${loadingId}" class="bg-gray-100 dark:bg-[#2A374A] text-gray-500 rounded-2xl p-3 shadow-sm max-w-[85%] animate-pulse">${loadingText}</div>`;
+
+            try {
+                const langName = getLanguageName(currentLang);
+                const context = `Goal: ${userProfile.goal}. Daily calorie target: ${userProfile.targetCalories}. Reply entirely in ${langName}.`;
+                advisorMessages.push({ role: 'user', content: `${context}\n\n${txt}` });
+                const reply = await callAI('', { messages: advisorMessages });
+                advisorMessages.push({ role: 'assistant', content: reply });
+                const loadingEl = document.getElementById(loadingId);
+                if (loadingEl) loadingEl.remove();
+                appendChatMessage(chatMessages, reply, false);
+            } catch (e) {
+                const loadingEl = document.getElementById(loadingId);
+                if (loadingEl) loadingEl.remove();
+                const errText = currentLang === 'ar' ? 'حدث خطأ في الاتصال بالذكاء الاصطناعي.' : (currentLang === 'hi' ? 'कनेक्शन त्रुटि हुई।' : 'AI connection error occurred.');
+                chatMessages.innerHTML += `<div class="bg-red-500/10 text-red-500 rounded-2xl p-3">${errText}</div>`;
+            }
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        async function askMealSuggestion() {
+            const totalCal = mealsList.reduce((acc, m) => acc + (m.calories || 0), 0);
+            const remaining = Math.max(200, userProfile.targetCalories - totalCal);
+            toggleChat();
+
+            const chatMessages = document.getElementById('chat-messages');
+            if (!chatMessages) return;
+
+            const loadingId = 'loading-' + Date.now();
+            const loadingText = currentLang === 'ar' ? `جاري اقتراح وجبة بحوالي ${remaining} سعرة...` : (currentLang === 'hi' ? `लगभग ${remaining} कैलोरी के भोजन का सुझाव दिया जा रहा है...` : `Suggesting meal for ~${remaining} calories...`);
+            chatMessages.innerHTML += `<div id="${loadingId}" class="bg-gray-100 dark:bg-[#2A374A] text-gray-500 rounded-2xl p-3 shadow-sm max-w-[85%] animate-pulse">${loadingText}</div>`;
+
+            try {
+                const langName = getLanguageName(currentLang);
+                const prompt = `Suggest a healthy meal with about ${remaining} calories for goal ${userProfile.goal}. Give meal name, calories, protein, carbs, fat. Respond entirely in ${langName}.`;
+                const reply = await callAI(prompt);
+                const loadingEl = document.getElementById(loadingId);
+                if (loadingEl) loadingEl.remove();
+                chatMessages.innerHTML += `<div class="bg-gray-100 dark:bg-[#2A374A] text-gray-800 dark:text-gray-200 rounded-2xl p-3 shadow-sm max-w-[85%] leading-relaxed">${reply}</div>`;
+            } catch (e) {
+                const loadingEl = document.getElementById(loadingId);
+                if (loadingEl) loadingEl.remove();
+            }
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        async function generateRecipeFromFridge() {
+            const ingEl = document.getElementById('fridge-ingredients');
+            if (!ingEl) return;
+            const ing = ingEl.value.trim();
+            if (!ing) return;
+
+            const resDiv = document.getElementById('fridge-result');
+            if (!resDiv) return;
+            resDiv.classList.remove('hidden');
+            const loadingText = currentLang === 'ar' ? 'جاري ابتكار الوصفة الصحية...' : (currentLang === 'hi' ? 'स्वस्थ रेसिपी बनाई जा रही है...' : 'Creating healthy recipe...');
+            resDiv.innerHTML = `<div class="animate-pulse text-center py-4">${loadingText}</div>`;
+
+            try {
+                const langName = getLanguageName(currentLang);
+                const prompt = `Available ingredients: "${ing}". Goal: ${userProfile.goal}. Create a healthy recipe with steps, calories, and macros. Respond entirely in ${langName}.`;
+                const recipe = await callAI(prompt);
+                resDiv.innerHTML = `<div class="whitespace-pre-line">${recipe}</div>`;
+            } catch (e) {
+                resDiv.innerHTML = currentLang === 'ar' ? 'حدث خطأ أثناء ابتكار الوصفة.' : (currentLang === 'hi' ? 'रेसिपी बनाते समय त्रुटि हुई।' : 'Error creating recipe.');
+            }
+        }
+
+        async function generateWeeklyDietPlan() {
+            const resDiv = document.getElementById('weekly-plan-result');
+            if (!resDiv) return;
+            const loadingText = currentLang === 'ar' ? 'جاري توليد خطة النظام الغذائي الأسبوعي بالذكاء الاصطناعي...' : (currentLang === 'hi' ? 'एआई द्वारा साप्ताहिक आहार योजना बनाई जा रही है...' : 'Generating weekly diet plan via AI...');
+            resDiv.innerHTML = `<div class="animate-pulse text-center py-4">${loadingText}</div>`;
+
+            try {
+                const langName = getLanguageName(currentLang);
+                const prompt = `Generate a 7-day diet plan for goal "${userProfile.goal}" with daily target ${userProfile.targetCalories} kcal. Respond entirely in ${langName}.`;
+                const plan = await callAI(prompt);
+                resDiv.innerHTML = `<div class="whitespace-pre-line">${plan}</div>`;
+            } catch (e) {
+                resDiv.innerHTML = currentLang === 'ar' ? 'حدث خطأ أثناء توليد الخطة الأسبوعية.' : (currentLang === 'hi' ? 'साप्ताहिक योजना बनाते समय त्रुटि हुई।' : 'Error generating weekly plan.');
+            }
+        }
+    </script>
+</body>
+</html>
